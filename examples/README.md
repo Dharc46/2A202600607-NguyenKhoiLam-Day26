@@ -6,7 +6,7 @@ Cùng một tool `get_weather`, hai cách triển khai chạy được để so 
 
 ```bash
 cd examples
-python -m venv .venv && source .venv/bin/activate
+python -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
 cd mcp && python weather_client.py
 ```
@@ -18,7 +18,7 @@ Tools server cung cấp:
   - get_weather: Lấy thời tiết hiện tại của một thành phố.
 
 call_tool get_weather(city='Hà Nội'):
-  -> Hà Nội: 31°C, trời nắng
+  -> Hà Nội: 29°C, trời mưa nhẹ
 
 call_tool get_weather(city='Đà Nẵng'):
   -> Đà Nẵng: 30°C, nhiều mây
@@ -28,7 +28,7 @@ call_tool get_weather(city='Đà Nẵng'):
 
 ```bash
 cd examples
-python -m venv .venv && source .venv/bin/activate
+python -m venv venv && source venv/bin/activate 
 pip install -r requirements.txt
 ```
 
@@ -37,7 +37,7 @@ pip install -r requirements.txt
 Tool được định nghĩa schema thủ công và thực thi ngay trong app. Cần API key.
 
 ```bash
-export ANTHROPIC_API_KEY=sk-ant-...
+export GEMINI_API_KEY=...
 cd function_calling
 python weather_function_calling.py
 ```

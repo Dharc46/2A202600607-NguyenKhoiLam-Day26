@@ -19,8 +19,8 @@ from mcp.server.fastmcp import FastMCP
 
 mcp = FastMCP("weather")
 
-_FAKE_DB = {
-    "Hà Nội": "31°C, trời nắng",
+_MOCK_DB = {
+    "Hà Nội": "29°C, trời mưa",
     "Hồ Chí Minh": "33°C, mưa rào",
     "Đà Nẵng": "30°C, nhiều mây",
 }
@@ -29,7 +29,7 @@ _FAKE_DB = {
 @mcp.tool()
 def get_weather(city: str) -> str:
     """Lấy thời tiết hiện tại của một thành phố."""
-    return f"{city}: {_FAKE_DB.get(city, '28°C, không có dữ liệu chi tiết')}"
+    return f"{city}: {_MOCK_DB.get(city, '28°C, không có dữ liệu chi tiết')}"
 
 
 if __name__ == "__main__":
