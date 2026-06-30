@@ -27,7 +27,7 @@ day26-mcp/
     └── versioned_server.py
 ```
 
-## Cách chạy nhanh
+## Quick start
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
@@ -59,15 +59,14 @@ cd 03-production && python registry_client.py
 
 ## So sánh trực tiếp
 
-| Tiêu chí | Function Calling | MCP |
+| Tiêu chí | Function Calling | Model Context Protocol (MCP) |
 |---|---|---|
-| **Bản chất** | Khả năng của LLM | Giao thức giao tiếp client–server |
-| **Tầng** | Tầng model | Tầng hạ tầng/tích hợp |
+| **Bản chất** | Tính năng của mô hình (Model capability) | Giao thức giao tiếp client–server |
 | **Ai định nghĩa tool?** | Bạn hard-code trong từng app | Server tự công bố (self-describe) tool |
 | **Tái sử dụng** | Phải viết lại cho mỗi app/model | Viết 1 lần, mọi MCP client dùng được |
 | **Thực thi** | App của bạn tự chạy | MCP Server chạy, client điều phối |
 | **Tính chuẩn hóa** | Mỗi nhà cung cấp 1 kiểu (OpenAI, Anthropic khác nhau) | Một chuẩn chung do Anthropic đề xuất |
-| **Phạm vi** | Chỉ "gọi hàm" | Tools + Resources + Prompts |
+| **Hệ sinh thái** | Khó chia sẻ dạng module đóng gói sẵn | Dễ dàng chia sẻ và tải về các "MCP Servers" mã nguồn mở |
 
 ## Quan hệ giữa chúng
 
@@ -228,4 +227,4 @@ Chi tiết + code cho cả 3 phần: xem [`03-production/README.md`](03-producti
 
 ---
 
-**Tóm lại bằng một câu:** Function Calling là *cơ chế model gọi công cụ*; MCP là *chuẩn để kết nối model với các công cụ đó* — và MCP thực chất dùng Function Calling làm nền tảng để hoạt động.
+**Tóm lại:** Function Calling là *cơ chế model gọi công cụ*; MCP là *chuẩn để kết nối model với các công cụ đó* — và MCP thực chất dùng Function Calling làm nền tảng để hoạt động.
