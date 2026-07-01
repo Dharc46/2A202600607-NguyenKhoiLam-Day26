@@ -9,8 +9,6 @@ tất cả tại runtime mà không cần hard-code.
 
 Production thường dùng:
   - Tool registry tập trung (DB/API) với search full-text hoặc semantic
-  - Kubernetes + CRD (Custom Resource Definition) cho MCP servers
-  - API Gateway (Kong, Envoy) làm single entry point
 
 Ví dụ này minh hoạ ý tưởng với một file JSON đơn giản.
 

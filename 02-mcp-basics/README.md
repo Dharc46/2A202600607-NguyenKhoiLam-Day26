@@ -63,7 +63,7 @@ CÓ MCP (chuẩn hoá ổ cắm)
 ══════════════════════════
 
   Quạt  ──┐                    ┌── Nhà 1
-  Tivi  ──┼── ổ cắm chuẩn ──  ├── Nhà 2
+  Tivi  ──┼── ổ cắm chuẩn ──   ├── Nhà 2
   Máy lạnh┘                    └── Nhà 3
 
   Viết tool 1 lần → mọi AI app dùng được
@@ -99,7 +99,7 @@ Bước 2 — GỌI TOOL: "Cho tôi thời tiết HN"
     │    {"city": "Hanoi"})         │
     │                               │  SERVER thực thi hàm
     │                               │  get_weather("Hanoi")
-    │◀── "Hanoi: 29°C, mưa" ────── │
+    │◀── "Hanoi: 29°C, mưa" ──────  │
     │                               │
 
   So sánh Function Calling:
@@ -179,7 +179,7 @@ Function Calling:                          MCP:
   App A: thêm schema + hàm                  Server: thêm 1 hàm @mcp.tool()
   App B: copy schema + hàm                  Client A: không đổi (tự khám phá)
   App C: copy schema + hàm                  Client B: không đổi
-                                             Client C: không đổi
+                                            Client C: không đổi
   3 chỗ phải sửa                             1 chỗ phải sửa
 ```
 

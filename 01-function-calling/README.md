@@ -63,7 +63,7 @@ User: "Thời tiết HN?"                     User: "Thời tiết HN?"
                                              └────────┘
 ```
 
-**Điểm mấu chốt:** Model **KHÔNG chạy** hàm. Nó chỉ nói *"hãy gọi hàm X với tham số Y"*. App của bạn mới là người thực thi.
+**Điểm mấu chốt:** Model **KHÔNG chạy** hàm. Nó chỉ nói *"hãy gọi hàm X với tham số Y"*.
 
 ---
 
@@ -82,7 +82,7 @@ Bước 1 — App chuẩn bị "hộp công cụ" cho model
     │  Tham số:                              │
     │    city: string (bắt buộc)             │
     │                                        │
-    │  ⚠️ Schema viết TAY - 15 dòng code     │
+    │   Schema viết TAY - 15 dòng code       │
     │     phải khớp với hàm thật             │
     └────────────────────────────────────────┘
 
@@ -106,7 +106,7 @@ Bước 3 — Model TRẢ VỀ yêu cầu gọi tool (không tự chạy!)
     │      get_weather(city="Đà Nẵng")             │
     │    ]                                         │
     │                                              │
-    │  ⚠️  Model CHỈ sinh JSON — không hề chạy     │
+    │    Model CHỈ sinh JSON — không hề chạy       │
 
 Bước 4 — App TỰ THI HÀNH hàm get_weather
 ═════════════════════════════════════════
