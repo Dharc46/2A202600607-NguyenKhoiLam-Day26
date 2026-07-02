@@ -33,13 +33,40 @@ from mcp.client.stdio import stdio_client
 from mcp.client.streamable_http import streamable_http_client
 
 REGISTRY_PATH = Path(__file__).parent / "registry.json"
+BASE_DIR = REGISTRY_PATH.parent
+
+
+def configure_console() -> None:
+    """Cho phép in tiếng Việt ổn định trên console Windows."""
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            reconfigure(encoding="utf-8")
+
+
+def version_key(version: str) -> tuple[int, ...]:
+    """Chuyển SemVer dạng số thành tuple để 10.0.0 lớn hơn 2.0.0."""
+    try:
+        return tuple(int(part) for part in version.split("-", 1)[0].split("."))
+    except ValueError as exc:
+        raise ValueError(f"Version không hợp lệ: {version}") from exc
+
+
+def text_result(result: object) -> str:
+    """Trích xuất text từ CallToolResult và không bỏ qua lỗi MCP."""
+    if getattr(result, "isError", False):
+        raise RuntimeError("MCP server trả về lỗi khi gọi tool")
+    parts = [item.text for item in result.content if item.type == "text"]
+    if not parts:
+        raise RuntimeError("MCP server không trả về nội dung dạng text")
+    return "\n".join(parts)
 
 
 class ToolRegistry:
     """Danh mục trung tâm — agent tra cứu tool theo tag, tên, hoặc mô tả."""
 
     def __init__(self, path: Path = REGISTRY_PATH) -> None:
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             data = json.load(f)
         self.tools: dict[str, dict] = data["tools"]
         self.servers: dict[str, dict] = data["servers"]
@@ -76,7 +103,7 @@ class ToolRegistry:
             raise KeyError(f"Không tìm thấy tool (tag={tag}, keyword={keyword})")
         active = [r for r in results if not r["deprecated"]]
         candidates = active or results
-        return max(candidates, key=lambda r: r["version"])
+        return max(candidates, key=lambda r: version_key(r["version"]))
 
 
 async def connect_and_call(match: dict, tool_args: dict) -> str:
@@ -85,15 +112,20 @@ async def connect_and_call(match: dict, tool_args: dict) -> str:
     tool_name = match["tool"]
 
     if server.get("transport") == "stdio":
+        args = list(server["args"])
+        if args:
+            script = Path(args[0])
+            if not script.is_absolute():
+                args[0] = str((BASE_DIR / script).resolve())
         params = StdioServerParameters(
             command=sys.executable,
-            args=server["args"],
+            args=args,
         )
         async with stdio_client(params) as (read, write):
             async with ClientSession(read, write) as session:
                 await session.initialize()
                 result = await session.call_tool(tool_name, tool_args)
-                return result.content[0].text
+                return text_result(result)
 
     elif server.get("transport") == "streamable-http":
         headers = {}
@@ -109,7 +141,7 @@ async def connect_and_call(match: dict, tool_args: dict) -> str:
                 async with ClientSession(read, write) as session:
                     await session.initialize()
                     result = await session.call_tool(tool_name, tool_args)
-                    return result.content[0].text
+                    return text_result(result)
 
     raise ValueError(f"Transport không được hỗ trợ: {server.get('transport')}")
 
@@ -149,4 +181,5 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
+    configure_console()
     asyncio.run(main())

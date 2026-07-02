@@ -12,6 +12,8 @@ Cách chạy (cần auth_server.py đang chạy ở terminal khác):
 from __future__ import annotations
 
 import asyncio
+import os
+import sys
 
 import httpx
 
@@ -19,7 +21,14 @@ from mcp import ClientSession
 from mcp.client.streamable_http import streamable_http_client
 
 SERVER_URL = "http://localhost:8000/mcp"
-TOKEN = "dev-token-abc123"
+TOKEN = os.environ.get("MCP_AUTH_TOKEN", "dev-token-abc123")
+
+
+def configure_console() -> None:
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            reconfigure(encoding="utf-8")
 
 
 async def main() -> None:
@@ -42,8 +51,14 @@ async def main() -> None:
                     print(f"  - {t.name}: {t.description}")
 
                 result = await session.call_tool("get_weather", {"city": "Hanoi"})
-                print(f"\nKết quả: {result.content[0].text}")
+                if result.isError:
+                    raise RuntimeError("get_weather trả về lỗi")
+                parts = [item.text for item in result.content if item.type == "text"]
+                if not parts:
+                    raise RuntimeError("Server không trả về nội dung dạng text")
+                print(f"\nKết quả: {' '.join(parts)}")
 
 
 if __name__ == "__main__":
+    configure_console()
     asyncio.run(main())

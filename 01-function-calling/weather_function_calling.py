@@ -11,12 +11,13 @@ Cách chạy:
 
 import json
 import os
+import sys
 from typing import Any
 
 from google import genai
 from google.genai import types
 
-MODEL = "gemini-2.5-flash"
+MODEL = "gemini-3.1-flash-lite"
 MAX_TOOL_ROUNDS = 8
 
 SYSTEM_INSTRUCTION = (
@@ -44,9 +45,26 @@ get_weather_declaration = types.FunctionDeclaration(
 TOOLS = [types.Tool(function_declarations=[get_weather_declaration])]
 
 
+def configure_console() -> None:
+    """Cho phép in tiếng Việt ổn định trên console Windows."""
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            reconfigure(encoding="utf-8")
+
+
 # 2. App tự thực thi tool (trong thực tế sẽ gọi API thời tiết thật)
 def get_weather(city: str) -> str:
     """Trả về thời tiết (mock) của *city*. Dùng làm tool cho model."""
+    aliases = {
+        "hanoi": "Hà Nội",
+        "ha noi": "Hà Nội",
+        "danang": "Đà Nẵng",
+        "da nang": "Đà Nẵng",
+        "ho chi minh": "Hồ Chí Minh",
+        "ho chi minh city": "Hồ Chí Minh",
+    }
+    canonical_city = aliases.get(city.strip().casefold(), city.strip())
     mock_data = {
         "Hà Nội": {
             "nhiệt_độ": "29°C",
@@ -68,7 +86,10 @@ def get_weather(city: str) -> str:
         },
     }
     default = {"nhiệt_độ": "28°C", "thời_tiết": "không có dữ liệu chi tiết"}
-    return json.dumps({"city": city, **mock_data.get(city, default)}, ensure_ascii=False)
+    return json.dumps(
+        {"city": canonical_city, **mock_data.get(canonical_city, default)},
+        ensure_ascii=False,
+    )
 
 
 def execute_tool(name: str, arguments: dict[str, Any]) -> str:
@@ -144,6 +165,7 @@ def run(prompt: str, client: genai.Client | None = None) -> str:
 
 
 if __name__ == "__main__":
+    configure_console()
     if not os.getenv("GEMINI_API_KEY"):
         raise SystemExit("Thiếu GEMINI_API_KEY. Hãy thiết lập biến môi trường trước khi chạy.")
     question = "Thời tiết Hà Nội và Đà Nẵng hôm nay thế nào?"

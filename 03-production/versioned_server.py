@@ -75,6 +75,10 @@ def get_weather_v2(
         include_forecast: Có trả thêm dự báo 2 ngày tới không (mặc định: False)
         units: Đơn vị nhiệt độ — "celsius" hoặc "fahrenheit" (mặc định: celsius)
     """
+    units = units.strip().lower()
+    if units not in {"celsius", "fahrenheit"}:
+        raise ValueError("units phải là 'celsius' hoặc 'fahrenheit'")
+
     data = _MOCK_DB.get(city)
     if not data:
         return json.dumps(
@@ -97,7 +101,11 @@ def get_weather_v2(
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
     if include_forecast:
-        result["forecast"] = data["forecast"]
+        forecast = [dict(day) for day in data["forecast"]]
+        if units == "fahrenheit":
+            for day in forecast:
+                day["temp"] = round(day["temp"] * 9 / 5 + 32, 1)
+        result["forecast"] = forecast
 
     return json.dumps(result, ensure_ascii=False)
 

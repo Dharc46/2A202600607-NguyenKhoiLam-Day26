@@ -40,7 +40,10 @@ class StaticTokenVerifier(TokenVerifier):
     async def verify_token(self, token: str) -> AccessToken | None:
         client_id = VALID_TOKENS.get(token)
         if client_id is None:
-            return None
+            # Đánh dấu credential đã được gửi nhưng không cấp scope nào.
+            # RequireAuthMiddleware sẽ trả 403 (insufficient_scope), trong khi
+            # request không có bearer token vẫn nhận 401.
+            return AccessToken(token=token, client_id="invalid-token", scopes=[])
         return AccessToken(token=token, client_id=client_id, scopes=["weather:read"])
 
 
@@ -52,6 +55,7 @@ mcp = FastMCP(
     auth=AuthSettings(
         issuer_url="http://localhost:8000",
         resource_server_url="http://localhost:8000",
+        required_scopes=["weather:read"],
     ),
     token_verifier=StaticTokenVerifier(),
 )

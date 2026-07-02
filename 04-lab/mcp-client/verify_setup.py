@@ -5,29 +5,35 @@ Checks if all components are configured correctly
 """
 import os
 import sys
+import asyncio
 from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent
+
+
+def configure_console():
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            reconfigure(encoding="utf-8")
 
 def check_environment():
     """Check if .env file exists and is configured"""
     print("🔍 Checking environment configuration...")
     
-    env_file = Path(".env")
-    if not env_file.exists():
-        print("❌ .env file not found")
-        print("   Run: echo 'GOOGLE_API_KEY=your_key' > .env")
-        return False
-    
-    # Check if GOOGLE_API_KEY is set
+    env_file = BASE_DIR / ".env"
     from dotenv import load_dotenv
-    load_dotenv()
+    if env_file.exists():
+        load_dotenv(env_file)
     
     api_key = os.getenv("GOOGLE_API_KEY")
     if not api_key or api_key == "your_google_api_key_here":
-        print("❌ GOOGLE_API_KEY not configured in .env")
+        print("❌ GOOGLE_API_KEY not configured in environment or .env")
         print("   Get key from: https://aistudio.google.com/apikey")
         return False
     
-    print(f"✅ GOOGLE_API_KEY configured ({api_key[:10]}...)")
+    source = ".env" if env_file.exists() else "environment"
+    print(f"✅ GOOGLE_API_KEY configured from {source}")
     return True
 
 def check_dependencies():
@@ -36,7 +42,7 @@ def check_dependencies():
     
     required_packages = [
         ("google.adk", "Google ADK"),
-        ("google.generativeai", "Google Generative AI"),
+        ("google.genai", "Google Gen AI"),
         ("mcp", "MCP"),
         ("fastmcp", "FastMCP"),
         ("dotenv", "python-dotenv"),
@@ -54,7 +60,7 @@ def check_dependencies():
     
     if not all_installed:
         print("\n   Install with: uv sync")
-        print("   Or: pip install google-adk google-generativeai mcp fastmcp python-dotenv httpx")
+        print("   Or: pip install google-adk google-genai mcp fastmcp python-dotenv httpx")
     
     return all_installed
 
@@ -69,7 +75,7 @@ def check_agent_structure():
     
     all_exist = True
     for file_path in required_files:
-        path = Path(file_path)
+        path = BASE_DIR / file_path
         if path.exists():
             print(f"✅ {file_path}")
         else:
@@ -82,25 +88,28 @@ def check_mcp_server():
     """Check if MCP server is accessible"""
     print("\n🔍 Checking MCP server connectivity...")
     
-    server_url = "https://weather-mcp-server-oze7nwnjba-as.a.run.app"
+    server_url = os.getenv("MCP_SERVER_URL", "http://localhost:8085/mcp")
     
     try:
-        import httpx
-        import asyncio
-        
+        from mcp import ClientSession
+        from mcp.client.streamable_http import streamable_http_client
+
         async def test_connection():
-            async with httpx.AsyncClient() as client:
-                response = await client.get(server_url, timeout=10.0)
-                return response.status_code
-        
-        status_code = asyncio.run(test_connection())
-        
-        if status_code in [200, 404]:  # 404 is expected for GET on MCP endpoint
-            print(f"✅ MCP server reachable at {server_url}")
-            return True
-        else:
-            print(f"⚠️  MCP server returned status {status_code}")
-            return False
+            async with streamable_http_client(server_url) as (read, write, _):
+                async with ClientSession(read, write) as session:
+                    await session.initialize()
+                    tools = await session.list_tools()
+                    names = {tool.name for tool in tools.tools}
+                    expected = {"get_current_weather", "get_forecast", "health_check"}
+                    if names != expected:
+                        raise RuntimeError(f"Unexpected tools: {sorted(names)}")
+                    result = await session.call_tool("health_check", {})
+                    if result.isError:
+                        raise RuntimeError("health_check returned an MCP error")
+
+        asyncio.run(test_connection())
+        print(f"✅ MCP server and all 3 tools available at {server_url}")
+        return True
             
     except Exception as e:
         print(f"❌ Cannot reach MCP server: {e}")
@@ -142,8 +151,7 @@ def main():
     if all(checks):
         print("✅ All checks passed!")
         print("\n🚀 Ready to start!")
-        print("   Run: ./start_agent.sh")
-        print("   Or:  uv run adk web")
+        print("   Run: uv run adk web")
         print("\n📍 Then open: http://localhost:8000")
         return 0
     else:
@@ -152,5 +160,6 @@ def main():
         return 1
 
 if __name__ == "__main__":
+    configure_console()
     sys.exit(main())
 

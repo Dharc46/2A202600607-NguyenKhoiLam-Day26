@@ -103,7 +103,7 @@ connection_params = StreamableHTTPConnectionParams(
 
 root_agent = Agent(
     name="weather_agent",
-    model="gemini-2.5-flash",
+    model="gemini-3.1-flash-lite",
     tools=[weather_tools],
 )
 ```
@@ -133,6 +133,9 @@ Fix the connection and restart ADK web.
 Create `.env` file:
 ```bash
 GOOGLE_API_KEY=your_gemini_api_key
+# Optional overrides:
+MCP_SERVER_URL=http://localhost:8085/mcp
+GEMINI_MODEL=gemini-3.1-flash-lite
 ```
 
 ## Resources

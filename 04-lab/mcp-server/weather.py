@@ -1,7 +1,7 @@
-from typing import Any
-import asyncio
-import httpx
 import os
+from typing import Any
+
+import httpx
 from mcp.server.fastmcp import FastMCP
 
 # Initialize FastMCP server
@@ -12,29 +12,26 @@ mcp = FastMCP("weather", host="0.0.0.0", port=port)
 WEATHERAPI_BASE = "https://api.weatherapi.com/v1"
 USER_AGENT = "weather-app/1.0"
 
-# Get API key from environment variable
-API_KEY = os.getenv("WEATHERAPI_KEY")
-
 async def make_weather_request(endpoint: str, params: dict[str, str]) -> dict[str, Any] | None:
     """Make a request to the WeatherAPI with proper error handling."""
-    # Check if API key is set
-    if not API_KEY:
+    api_key = os.getenv("WEATHERAPI_KEY")
+    if not api_key:
         print("ERROR: WeatherAPI key not set. Please set WEATHERAPI_KEY environment variable.")
         return None
         
     headers = {
         "User-Agent": USER_AGENT,
     }
-    # Add API key to parameters
-    params["key"] = API_KEY
+    request_params = {**params, "key": api_key}
     
     url = f"{WEATHERAPI_BASE}/{endpoint}"
     
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.get(url, headers=headers, params=params, timeout=30.0)
+            response = await client.get(url, headers=headers, params=request_params, timeout=30.0)
             response.raise_for_status()
-            return response.json()
+            data = response.json()
+            return data if isinstance(data, dict) else None
         except httpx.HTTPStatusError as e:
             print(f"HTTP Error {e.response.status_code}: {e.response.text}")
             return None
@@ -52,6 +49,10 @@ async def get_current_weather(city: str) -> str:
     Args:
         city: City name (e.g., "Hanoi", "Haiphong", "Danang", "Brisbane", "Sydney")
     """
+    city = city.strip()
+    if not city:
+        raise ValueError("city must not be empty")
+
     params = {
         "q": city,
         "aqi": "no"
@@ -60,7 +61,7 @@ async def get_current_weather(city: str) -> str:
     data = await make_weather_request("current.json", params)
 
     if not data:
-        if not API_KEY:
+        if not os.getenv("WEATHERAPI_KEY"):
             return f"❌ WeatherAPI key not configured. Please set WEATHERAPI_KEY environment variable with your API key from weatherapi.com"
         return f"Unable to fetch current weather data for {city}. Please check the city name and API key configuration."
 
@@ -90,8 +91,11 @@ async def get_forecast(city: str, days: int = 3) -> str:
         city: City name (e.g., "Hanoi", "Haiphong", "Danang", "Brisbane", "Sydney", "Melbourne")
         days: Number of days to forecast (1-3 for free tier, max 10 for paid)
     """
-    # Limit days to 3 for free tier
-    days = min(days, 3)
+    city = city.strip()
+    if not city:
+        raise ValueError("city must not be empty")
+    if not 1 <= days <= 3:
+        raise ValueError("days must be between 1 and 3")
     
     params = {
         "q": city,
@@ -103,7 +107,7 @@ async def get_forecast(city: str, days: int = 3) -> str:
     data = await make_weather_request("forecast.json", params)
 
     if not data:
-        if not API_KEY:
+        if not os.getenv("WEATHERAPI_KEY"):
             return f"❌ WeatherAPI key not configured. Please set WEATHERAPI_KEY environment variable with your API key from weatherapi.com"
         return f"Unable to fetch forecast data for {city}. Please check the city name and API key configuration."
 
@@ -139,14 +143,5 @@ print("✅ MCP server initialized with Streamable HTTP transport")
 print("🔧 Available tools: get_current_weather, get_forecast, health_check")
 
 if __name__ == "__main__":
-    import sys
-    
-    is_cloud_run = bool(os.getenv("PORT"))
-    is_standalone = len(sys.argv) == 1 and sys.stdin.isatty()
-    
-    if is_cloud_run or is_standalone:
-        print(f"🚀 Starting MCP server on http://0.0.0.0:{port}/mcp")
-        mcp.run(transport="streamable-http")
-    else:
-        print("Starting FastMCP server in stdio mode for local client", file=sys.stderr)
-        mcp.run()
+    print(f"🚀 Starting MCP server on http://0.0.0.0:{port}/mcp")
+    mcp.run(transport="streamable-http")
